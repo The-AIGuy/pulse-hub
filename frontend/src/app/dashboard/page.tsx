@@ -40,18 +40,6 @@ type Moment = {
   comment: string;
 };
 
-const channels: ChatTarget[] = [
-  { id: "general", label: "general", detail: "The everyday room", kind: "channel", color: "bg-lime-300" },
-  { id: "announcements", label: "announcements", detail: "News from the crew", kind: "channel", color: "bg-orange-300" },
-  { id: "film-club", label: "film-club", detail: "Watchlist and reviews", kind: "channel", color: "bg-sky-300" },
-];
-
-const friends: ChatTarget[] = [
-  { id: "maya", label: "Maya Chen", detail: "Active now", kind: "friend", color: "bg-fuchsia-300" },
-  { id: "jules", label: "Jules Okafor", detail: "Active 12m ago", kind: "friend", color: "bg-yellow-200" },
-  { id: "noah", label: "Noah Williams", detail: "Active 1h ago", kind: "friend", color: "bg-cyan-300" },
-];
-
 const initialMoments: Moment[] = [];
 
 function Avatar({ initials, color, small = false }: { initials: string; color: string; small?: boolean }) {
@@ -62,7 +50,7 @@ function Avatar({ initials, color, small = false }: { initials: string; color: s
   );
 }
 
-function Rail() {
+function Rail({ onMenu }: { onMenu: () => void }) {
   return (
     <aside className="hidden w-20 shrink-0 flex-col items-center border-r border-white/5 bg-[#151a1a] py-5 text-white shadow-[12px_0_40px_rgba(15,22,20,0.08)] md:flex">
       <button className="mb-6 flex h-11 w-11 items-center justify-center rounded-[15px] bg-lime-300 text-lg font-black text-slate-900 transition-transform hover:scale-105" aria-label="Pulse Hub home">
@@ -80,14 +68,14 @@ function Rail() {
         +
       </button>
       <div className="mt-auto flex flex-col items-center gap-4">
-        <button className="text-lg text-white/50 hover:text-white" aria-label="Settings">•••</button>
+        <button onClick={onMenu} className="text-lg text-white/50 hover:text-white" aria-label="Open account menu">•••</button>
         <Avatar initials="AK" color="bg-white" />
       </div>
     </aside>
   );
 }
 
-function ContextSidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect: (target: ChatTarget) => void }) {
+function ContextSidebar({ channels, friends, selectedId, onSelect, onAction }: { channels: ChatTarget[]; friends: ChatTarget[]; selectedId: string | null; onSelect: (target: ChatTarget) => void; onAction: (action: "channel" | "friend" | "space") => void }) {
   return (
     <aside className="w-full shrink-0 border-b border-[#d9ddd4] bg-[#f4f5ef]/95 px-5 py-5 backdrop-blur md:w-64 md:border-b-0 md:border-r md:px-4 lg:w-72">
       <div className="mb-7 flex items-start justify-between">
@@ -95,7 +83,7 @@ function ContextSidebar({ selectedId, onSelect }: { selectedId: string | null; o
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Your space</p>
           <h1 className="mt-1 text-xl font-black tracking-tight text-slate-900">The Commons</h1>
         </div>
-        <button className="rounded-lg px-2 py-1 text-lg text-slate-400 hover:bg-white hover:text-slate-900" aria-label="More space options">•••</button>
+        <button onClick={() => onAction("space")} className="rounded-lg px-2 py-1 text-lg text-slate-400 hover:bg-white hover:text-slate-900" aria-label="More space options">•••</button>
       </div>
 
       <div className="mb-6 rounded-xl border border-[#dde1d8] bg-white/80 p-3 shadow-[0_8px_24px_rgba(34,44,35,0.05)]">
@@ -109,9 +97,10 @@ function ContextSidebar({ selectedId, onSelect }: { selectedId: string | null; o
       <section>
         <div className="mb-2 flex items-center justify-between px-2">
           <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Channels</h2>
-          <button className="text-lg leading-none text-slate-400 hover:text-slate-900" aria-label="Add channel">+</button>
+          <button onClick={() => onAction("channel")} className="text-lg leading-none text-slate-400 hover:text-slate-900" aria-label="Add channel">+</button>
         </div>
         <div className="space-y-1">
+          {!channels.length && <p className="px-3 py-2 text-xs leading-5 text-slate-400">No channels yet. Create the first one.</p>}
           {channels.map((channel) => (
             <button key={channel.id} onClick={() => onSelect(channel)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${selectedId === channel.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:bg-white/70 hover:text-slate-900"}`}>
               <span className="text-base font-light text-slate-400">#</span>
@@ -125,9 +114,10 @@ function ContextSidebar({ selectedId, onSelect }: { selectedId: string | null; o
       <section className="mt-7">
         <div className="mb-2 flex items-center justify-between px-2">
           <h2 className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Direct messages</h2>
-          <button className="text-lg leading-none text-slate-400 hover:text-slate-900" aria-label="Start direct message">+</button>
+          <button onClick={() => onAction("friend")} className="text-lg leading-none text-slate-400 hover:text-slate-900" aria-label="Start direct message">+</button>
         </div>
         <div className="space-y-1">
+          {!friends.length && <p className="px-3 py-2 text-xs leading-5 text-slate-400">No conversations yet. Start one.</p>}
           {friends.map((friend) => (
             <button key={friend.id} onClick={() => onSelect(friend)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${selectedId === friend.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:bg-white/70 hover:text-slate-900"}`}>
               <span className="relative"><Avatar initials={friend.label.split(" ").map((name) => name[0]).join("")} color={friend.color} small /><span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-[#f5f6f1] bg-lime-400" /></span>
