@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useSocket } from "@/context/SocketContext";
 import SharedCanvas from "@/components/SharedCanvas";
 import { getBackendUrl } from "@/lib/backend";
@@ -53,18 +54,18 @@ function Avatar({ initials, color, small = false }: { initials: string; color: s
 function Rail({ onMenu }: { onMenu: () => void }) {
   return (
     <aside className="hidden w-20 shrink-0 flex-col items-center border-r border-white/5 bg-[#151a1a] py-5 text-white shadow-[12px_0_40px_rgba(15,22,20,0.08)] md:flex">
-      <button className="mb-6 flex h-11 w-11 items-center justify-center rounded-[15px] bg-lime-300 text-lg font-black text-slate-900 transition-transform hover:scale-105" aria-label="Pulse Hub home">
+      <button onClick={onMenu} className="mb-6 flex h-11 w-11 items-center justify-center rounded-[15px] bg-lime-300 text-lg font-black text-slate-900 transition-transform hover:scale-105" aria-label="Pulse Hub home">
         p
       </button>
       <div className="flex flex-col items-center gap-3">
         {["bg-lime-300", "bg-orange-300", "bg-sky-300", "bg-fuchsia-300"].map((color, index) => (
-          <button key={color} className={`h-11 w-11 rounded-full border-2 border-transparent ${color} text-xs font-black text-slate-900 transition-all hover:rounded-[15px] hover:border-white/60`} aria-label={`Community ${index + 1}`}>
+          <button onClick={onMenu} key={color} className={`h-11 w-11 rounded-full border-2 border-transparent ${color} text-xs font-black text-slate-900 transition-all hover:rounded-[15px] hover:border-white/60`} aria-label={`Community ${index + 1}`}>
             {index === 0 ? "PX" : index === 1 ? "C" : index === 2 ? "R" : "M"}
           </button>
         ))}
       </div>
       <div className="my-5 h-px w-8 bg-white/10" />
-      <button className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/30 text-xl text-white/60 hover:border-lime-300 hover:text-lime-300" aria-label="Add community">
+      <button onClick={onMenu} className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/30 text-xl text-white/60 hover:border-lime-300 hover:text-lime-300" aria-label="Add community">
         +
       </button>
       <div className="mt-auto flex flex-col items-center gap-4">
@@ -133,7 +134,8 @@ function ContextSidebar({ channels, friends, selectedId, onSelect, onAction }: {
 function MomentCard({ moment }: { moment: (typeof initialMoments)[number] }) {
   const [liked, setLiked] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState([moment.comment]);
+  const [comments, setComments] = useState(moment.comment ? [moment.comment] : []);
+  const [showOptions, setShowOptions] = useState(false);
 
   const renderMentionText = (text: string) => text.split(/(@\[[\w.-]+\])/g).map((part, index) => part.match(/^@\[[\w.-]+\]$/) ? <span key={`${part}-${index}`} className="font-bold text-lime-700">{part}</span> : part);
 
@@ -153,7 +155,10 @@ function MomentCard({ moment }: { moment: (typeof initialMoments)[number] }) {
           <p className="truncate text-sm font-bold text-slate-900">{moment.name}</p>
           <p className="text-xs text-slate-400">{moment.handle} · {moment.time}</p>
         </div>
-        <button className="text-lg text-slate-400 hover:text-slate-900" aria-label="Moment options">•••</button>
+        <div className="relative">
+          <button onClick={() => setShowOptions((current) => !current)} className="text-lg text-slate-400 hover:text-slate-900" aria-label="Moment options">•••</button>
+          {showOptions && <div className="absolute right-0 top-7 z-10 w-32 rounded-lg border border-slate-200 bg-white p-1 text-xs shadow-lg"><button onClick={() => setShowOptions(false)} className="w-full rounded-md px-3 py-2 text-left hover:bg-slate-50">Close menu</button><button onClick={() => setShowOptions(false)} className="w-full rounded-md px-3 py-2 text-left text-rose-600 hover:bg-rose-50">Report</button></div>}
+        </div>
       </div>
       <div className={`relative mx-3 aspect-[1.35] overflow-hidden rounded-[14px] bg-gradient-to-br ${moment.image} transition-transform duration-500 group-hover:scale-[1.01]`}>
         <div className="absolute -right-10 top-8 h-44 w-44 rounded-full border-[26px] border-white/30" />
@@ -242,8 +247,7 @@ function ChatWindow({ target, messages, onBack, onSend }: { target: ChatTarget; 
           <p className="text-sm font-bold text-slate-900">{isChannel ? `Welcome to #${target.label}` : `A quiet place for you and ${target.label.split(" ")[0]}`}</p>
           <p className="mt-1 text-xs text-slate-400">{isChannel ? "This is the beginning of the conversation." : "Send a note to start the conversation."}</p>
         </div>
-        <div className="max-w-[80%] self-start rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3 text-sm leading-6 text-slate-700">{isChannel ? "Anyone up for sharing a highlight from today?" : "Hey! I saw your latest Moment. So good."}</div>
-        <div className="max-w-[80%] self-end rounded-2xl rounded-br-md bg-slate-900 px-4 py-3 text-sm leading-6 text-white">I am in. Let me find something worth sharing.</div>
+        {!messages.length && <p className="mx-auto py-16 text-center text-xs text-slate-400">No messages here yet. Start the conversation.</p>}
         {messages.map((chatMessage) => (
           <div key={`${chatMessage.timestamp}-${chatMessage.sender}`} className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${chatMessage.sender === "currentUser" ? "self-end rounded-br-md bg-lime-300 text-slate-900" : "self-start rounded-bl-md bg-slate-100 text-slate-700"}`}>
             {chatMessage.messageText}
@@ -259,10 +263,16 @@ function ChatWindow({ target, messages, onBack, onSend }: { target: ChatTarget; 
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<ChatTarget | null>(null);
+  const [channels, setChannels] = useState<ChatTarget[]>([]);
+  const [friends, setFriends] = useState<ChatTarget[]>([]);
   const [feedMoments, setFeedMoments] = useState(initialMoments);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [menu, setMenu] = useState<"account" | "space" | null>(null);
+  const [sidebarAction, setSidebarAction] = useState<"channel" | "friend" | null>(null);
+  const [newName, setNewName] = useState("");
   const { socket, isConnected } = useSocket();
   const apiUrl = getBackendUrl();
 
@@ -274,12 +284,12 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!socket || !isConnected || !selectedTarget) {
+    if (!socket || !isConnected || !selectedTarget || !user) {
       return;
     }
 
     socket.emit("join_room", selectedTarget.id);
-  }, [socket, isConnected, selectedTarget]);
+  }, [socket, isConnected, selectedTarget, user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -343,11 +353,22 @@ export default function DashboardPage() {
   }, [socket, selectedTarget]);
 
   const handleSendMessage = (messageText: string) => {
-    if (!socket || !isConnected || !selectedTarget) {
+    if (!socket || !isConnected || !selectedTarget || !user) {
       return;
     }
 
-    socket.emit("send_msg", selectedTarget.id, user?.id, messageText);
+    socket.emit("send_msg", selectedTarget.id, user.id, messageText);
+  };
+
+  const handleSidebarAction = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const label = newName.trim();
+    if (!label || !sidebarAction) return;
+    const target: ChatTarget = { id: `${sidebarAction}-${Date.now()}`, label, detail: sidebarAction === "channel" ? "New channel" : "New conversation", kind: sidebarAction, color: "bg-lime-300" };
+    if (sidebarAction === "channel") setChannels((current) => [...current, target]);
+    else setFriends((current) => [...current, target]);
+    setNewName("");
+    setSidebarAction(null);
   };
 
   const handleCreatePost = async (caption: string) => {
@@ -366,10 +387,12 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-[#e9ebe5] text-slate-900">
       <div className="flex min-h-screen flex-col md:flex-row">
-        <Rail />
-        <ContextSidebar selectedId={selectedTarget?.id ?? null} onSelect={setSelectedTarget} />
+        <Rail onMenu={() => setMenu((current) => current === "account" ? null : "account")} />
+        <ContextSidebar channels={channels} friends={friends} selectedId={selectedTarget?.id ?? null} onSelect={setSelectedTarget} onAction={(action) => action === "space" ? setMenu((current) => current === "space" ? null : "space") : setSidebarAction(action)} />
         <section className="min-w-0 flex-1 px-4 py-5 sm:px-8 lg:px-14 lg:py-10">
-          <div className="mx-auto max-w-3xl">
+          <div className="relative mx-auto max-w-3xl">
+            {menu && <div className="absolute right-0 top-0 z-20 w-44 rounded-xl border border-slate-200 bg-white p-2 text-xs shadow-xl"><p className="px-3 py-2 font-bold text-slate-900">{menu === "account" ? user?.username ?? "Guest" : "The Commons"}</p><button onClick={() => setMenu(null)} className="w-full rounded-lg px-3 py-2 text-left text-slate-600 hover:bg-slate-50">Close menu</button>{menu === "account" && <button onClick={() => { window.localStorage.clear(); router.push("/login"); }} className="w-full rounded-lg px-3 py-2 text-left text-rose-600 hover:bg-rose-50">Sign out</button>}</div>}
+            {sidebarAction && <form onSubmit={handleSidebarAction} className="absolute left-0 top-0 z-20 w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-xl"><p className="text-sm font-bold">{sidebarAction === "channel" ? "Create channel" : "Start a conversation"}</p><input autoFocus required value={newName} onChange={(event) => setNewName(event.target.value)} placeholder={sidebarAction === "channel" ? "channel name" : "username"} className="mt-3 w-full rounded-lg bg-slate-50 px-3 py-2 text-sm outline-none ring-lime-300 focus:ring-2" /><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setSidebarAction(null)} className="px-3 py-2 text-xs font-bold text-slate-500">Cancel</button><button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white">Create</button></div></form>}
             <header className="mb-7 flex items-end justify-between gap-4">
               <div>
                 <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">

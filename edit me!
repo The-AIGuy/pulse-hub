@@ -1,9 +1,3 @@
-hello there
-this is just a random file i made ;)
-init) 
-} {freefall}
-print("hello")
-lolololol preTENDING I canvas CODE LOLOL fr who does this?
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -15,6 +9,6 @@ lolololol preTENDING I canvas CODE LOLOL fr who does this?
         function setup() {
             createCanvas(400, 400);
         }       
-        </script>
+    </script>
 </body>
-</html> 
+</html>
