@@ -1,0 +1,20 @@
+hello there
+this is just a random file i made ;)
+init) 
+} {freefall}
+print("hello")
+lolololol preTENDING I canvas CODE LOLOL fr who does this?
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>My Random File</title>       
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+    <script>
+        function setup() {
+            createCanvas(400, 400);
+        }       
+        </script>
+</body>
+</html> 
